@@ -1,65 +1,163 @@
 import React, { useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { assets } from "../assets/frontend_assets/assets";
 
 const Navbar = () => {
-  const [setVisible] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const location = useLocation();
+
+  const navItems = [
+    { to: "/", label: "Home" },
+    { to: "/collection", label: "Collection" },
+    { to: "/about", label: "About Us" },
+    { to: "/contact", label: "Contact Us" },
+  ];
+
   return (
-    <div className="flex items-center justify-between py-5 font-medium">
-      <img src={assets.logo} className="w-16" alt="Logo" />
+    <nav className="navbar navbar-expand-sm navbar-light bg-light px-3 py-2">
+      {/* Logo always visible */}
+      <Link className="navbar-brand" to="/">
+        <img src={assets.logo} alt="Logo" width="80" />
+      </Link>
 
-      <ul className="sm:flex gap-5 text-sm text-gray-700">
-        <NavLink to="/" className="flex flex-col items-center gap-1">
-          <p>Home</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-        <NavLink to="/collection" className="flex flex-col items-center gap-1">
-          <p>Collection</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-        <NavLink to="/about" className="flex flex-col items-center gap-1">
-          <p>About Us</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-        <NavLink to="/contact" className="flex flex-col items-center gap-1">
-          <p>Contact Us</p>
-          <hr className="w-2/4 border-none h-[1.5px] bg-gray-700 hidden" />
-        </NavLink>
-      </ul>
-
-      <div className="flex items-center gap-6">
+      {/* On small screens: icons + hamburger grouped */}
+      <div className="d-flex align-items-center ms-auto d-sm-none gap-3">
+        {/* Search icon */}
         <img
           src={assets.search_icon}
-          className="w-5 cursor-pointer"
           alt="Search"
+          width="20"
+          className="cursor-pointer"
         />
-
-        <div className="group relative">
+        {/* Profile dropdown */}
+        <div className="dropdown">
           <img
-            className="w-5 cursor-pointer"
             src={assets.profile_icon}
             alt="Profile"
+            width="20"
+            className="dropdown-toggle cursor-pointer"
+            role="button"
+            id="profileDropdown"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
           />
-          <div className="hidden group-hover:block absolute right-0 pt-4 dropdown-menu">
-            <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-700 shadow-lg rounded">
-              <p className="cursor-pointer hover:text-black">My Profile</p>
-              <p className="cursor-pointer hover:text-black">Orders</p>
-              <p className="cursor-pointer hover:text-black">Logout</p>
-            </div>
-          </div>
+          <ul
+            className="dropdown-menu dropdown-menu-end"
+            aria-labelledby="profileDropdown"
+          >
+            <li>
+              <p className="dropdown-item">My Profile</p>
+            </li>
+            <li>
+              <p className="dropdown-item">Orders</p>
+            </li>
+            <li>
+              <p className="dropdown-item">Logout</p>
+            </li>
+          </ul>
         </div>
 
-        <Link to="/cart" className="relative">
-          <img src={assets.cart_icon} className="w-5 min-w-5" alt="Cart" />
-          <p className="absolute right-[-5px] bottom-[-5px] w-4 h-4 text-center leading-4 bg-black-500 text-white aspect-square text-xs" />
+        {/* Cart icon */}
+        <Link to="/cart" className="position-relative">
+          <img src={assets.cart_icon} alt="Cart" width="20" />
+          <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
+            {/* cart count here */}
+          </span>
         </Link>
-        <img
-          onClick={() => setVisible(true)}
-          src={assets.menu_icon}
-          className="w-5 cursor-pointer sm:hidden"
-        />
+
+        {/* Hamburger button */}
+        <button
+          className="navbar-toggler"
+          type="button"
+          onClick={() => setVisible(!visible)}
+          aria-controls="navbarNav"
+          aria-expanded={visible}
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
       </div>
-    </div>
+
+      {/* On sm+ screens: full menu + icons */}
+      <div
+        className={`collapse navbar-collapse ${visible ? "show" : ""} d-sm-flex justify-content-center align-items-center`}
+        id="navbarNav"
+      >
+
+        <ul className="navbar-nav mx-auto mb-2 mb-sm-0 d-flex flex-column flex-sm-row gap-3">
+          {navItems.map(({ to, label }) => {
+            const isActive = location.pathname === to;
+
+            return (
+              <li
+                key={to}
+                className="nav-item text-center d-flex flex-column align-items-end"
+              >
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    "nav-link px-0" + (isActive ? " active" : "")
+                  }
+                  onClick={() => setVisible(false)} // close menu on click (mobile)
+                >
+                  {label}
+                </NavLink>
+                {isActive && (
+                  <hr
+                    className="ms-auto me-0 mt-1"
+                    style={{ width: "25%", borderTop: "2px solid black" }}
+                  />
+
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="d-none d-sm-flex align-items-center gap-3 ms-3">
+          <img
+            src={assets.search_icon}
+            alt="Search"
+            width="20"
+            className="cursor-pointer"
+          />
+
+          <div className="dropdown">
+            <img
+              src={assets.profile_icon}
+              alt="Profile"
+              width="20"
+              className="dropdown-toggle cursor-pointer"
+              role="button"
+              id="profileDropdownLarge"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            />
+            <ul
+              className="dropdown-menu dropdown-menu-end"
+              aria-labelledby="profileDropdownLarge"
+            >
+              <li>
+                <p className="dropdown-item">My Profile</p>
+              </li>
+              <li>
+                <p className="dropdown-item">Orders</p>
+              </li>
+              <li>
+                <p className="dropdown-item">Logout</p>
+              </li>
+            </ul>
+          </div>
+
+          <Link to="/cart" className="position-relative">
+            <img src={assets.cart_icon} alt="Cart" width="20" />
+            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
+              {/* cart count here */}
+            </span>
+          </Link>
+        </div>
+      </div>
+    </nav>
   );
 };
 
