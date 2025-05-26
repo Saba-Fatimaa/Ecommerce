@@ -1,4 +1,6 @@
 import React, { useContext, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+
 import { ShopContext } from '../context/ShopContext';
 
 const Title = ({ text1, text2 }) => (
@@ -20,14 +22,14 @@ const ShimmerCard = () => (
 );
 
 const Collection = () => {
-  const { products } = useContext(ShopContext);
+  const { products, currency, search, showSearch } = useContext(ShopContext);
 
   const [showFilter, setShowFilter] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [sortOrder, setSortOrder] = useState('relevant'); // relevant, low-high, high-low
 
-  const toggleFilter = () => setShowFilter(!showFilter);
+  const toggleFilter = () => setShowFilter((prev) => !prev);
 
   const handleCategoryChange = (e) => {
     const { value, checked } = e.target;
@@ -47,88 +49,102 @@ const Collection = () => {
     setSortOrder(e.target.value);
   };
 
-  // Filter products
-  const filteredProducts = useMemo(() => {
-    if (!products) return []; // no products yet
-    return products
-      .filter((product) => {
-        if (selectedCategories.length === 0 && selectedTypes.length === 0) return true;
-        const matchCategory =
-          selectedCategories.length === 0 || selectedCategories.includes(product.category);
-        const matchType =
-          selectedTypes.length === 0 || selectedTypes.includes(product.type);
-        return matchCategory && matchType;
-      })
-      .sort((a, b) => {
-        if (sortOrder === 'low-high') return a.price - b.price;
-        if (sortOrder === 'high-low') return b.price - a.price;
-        return 0; // relevant or default order (no sort)
-      });
-  }, [products, selectedCategories, selectedTypes, sortOrder]);
+  // Filter and sort products
 
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+  
+    let result = products;
+  
+    // Apply search filter
+    if (showSearch && search?.trim()) {
+      const lowerSearch = search.toLowerCase();
+      result = result.filter(product =>
+        product.name?.toLowerCase().includes(lowerSearch)
+      );
+    }
+  
+    // Apply category and type filters
+    result = result.filter(product => {
+      const matchCategory =
+        selectedCategories.length === 0 || selectedCategories.includes(product.category);
+      const matchType =
+        selectedTypes.length === 0 || selectedTypes.includes(product.type);
+      return matchCategory && matchType;
+    });
+  
+    // Apply sorting
+    result = result.sort((a, b) => {
+      if (sortOrder === 'low-high') return (a.price || 0) - (b.price || 0);
+      if (sortOrder === 'high-low') return (b.price || 0) - (a.price || 0);
+      return 0;
+    });
+  
+    return result;
+  }, [products, selectedCategories, selectedTypes, sortOrder, search, showSearch]);
+  
   return (
     <div className="container pt-4 border-top">
       <div className="row">
         {/* Filter Sidebar */}
-        <div className="col-sm-3">
-          <p
+        <div className="col-sm-3 mb-4">
+          <button
+            className="btn btn-outline-secondary w-100 mb-3"
             onClick={toggleFilter}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
-            className="my-2 h5 d-flex align-items-center gap-2"
+            aria-expanded={showFilter}
+            aria-controls="filter-section"
           >
-            FILTERS
-          </p>
+            {showFilter ? 'Hide Filters' : 'Show Filters'}
+          </button>
 
           {showFilter && (
             <>
-              <div className="card mb-3">
-                <div className="card-body">
-                  <h6 className="card-title mb-3">Categories</h6>
-                  {['Men', 'Women', 'Kids'].map((cat) => (
-                    <div className="form-check" key={cat}>
-                      <input
-                        type="checkbox"
-                        id={`cat${cat}`}
-                        className="form-check-input"
-                        value={cat}
-                        onChange={handleCategoryChange}
-                        checked={selectedCategories.includes(cat)}
-                      />
-                      <label htmlFor={`cat${cat}`} className="form-check-label">
-                        {cat}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <fieldset className="card mb-3">
+  <legend className="card-body card-title mb-3 h6">Categories</legend>
+  {['Men', 'Women', 'Kids'].map((cat) => (
+    <div className="form-check ms-3" key={cat}>
+      <input
+        type="checkbox"
+        id={`cat${cat}`}
+        className="form-check-input"
+        value={cat}
+        onChange={handleCategoryChange}
+        checked={selectedCategories.includes(cat)}
+      />
+      <label htmlFor={`cat${cat}`} className="form-check-label">
+        {cat}
+      </label>
+    </div>
+  ))}
+</fieldset>
 
-              <div className="card mb-3">
-                <div className="card-body">
-                  <h6 className="card-title mb-3">Type</h6>
-                  {['Topwear', 'Bottomwear', 'Winterwear'].map((type) => (
-                    <div className="form-check" key={type}>
-                      <input
-                        type="checkbox"
-                        id={`type${type}`}
-                        className="form-check-input"
-                        value={type}
-                        onChange={handleTypeChange}
-                        checked={selectedTypes.includes(type)}
-                      />
-                      <label htmlFor={`type${type}`} className="form-check-label">
-                        {type}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
+<fieldset className="card mb-3">
+  <legend className="card-body card-title mb-3 h6">Type</legend>
+  {['Topwear', 'Bottomwear', 'Winterwear'].map((type) => (
+    <div className="form-check ms-3" key={type}>
+      <input
+        type="checkbox"
+        id={`type${type}`}
+        className="form-check-input"
+        value={type}
+        onChange={handleTypeChange}
+        checked={selectedTypes.includes(type)}
+      />
+      <label htmlFor={`type${type}`} className="form-check-label">
+        {type}
+      </label>
+    </div>
+  ))}
+</fieldset>
+
             </>
           )}
         </div>
 
-        {/* Right Side */}
+        {/* Products Grid */}
         <div className="col-sm-9 flex-grow-1">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <Title text1="ALL" text2="COLLECTIONS" />
             <select
               className="form-select w-auto"
@@ -142,42 +158,52 @@ const Collection = () => {
             </select>
           </div>
 
-          <div className="row">
+          <div className="row g-4">
             {!products ? (
-              // Show 6 shimmer placeholders while loading
               Array(6)
                 .fill(0)
                 .map((_, idx) => (
-                  <div key={idx} className="col-md-4 mb-4">
+                  <div key={idx} className="col-6 col-sm-4 col-md-3">
                     <ShimmerCard />
                   </div>
                 ))
             ) : filteredProducts.length > 0 ? (
               filteredProducts.map((product) => (
-                <div key={product.id} className="col-md-4 mb-4">
-                  <div className="card h-100">
-                    <img
-                      src={product.image}
-                      className="card-img-top"
-                      alt={product.name}
-                      style={{ objectFit: 'cover', height: '200px' }}
-                    />
-                    <div className="card-body d-flex flex-column">
-                      <h5 className="card-title">{product.name}</h5>
-                      <p className="card-text">${product.price}</p>
+                <div key={product._id} className="col-6 col-sm-4 col-md-3">
+                  <Link to={`/product/${product._id}`} className="text-decoration-none text-dark">
+                  <div className="card h-200 border-0 shadow-sm product-card text-center transition">
+
+                    <div className="overflow-hidden rounded-2 product-img-wrapper">
+                      <img
+                        src={product.image[0]}
+                        alt={product.name}
+                        className="img-fluid product-img"
+                      />
+                    </div>
+                    <div className="card-body px-2 py-3">
+                      <p className="card-title mb-1 text-truncate" style={{ fontSize: '0.85rem' }}>
+                        {product.name}
+                      </p>
+                      <p className="card-text text-muted mb-0" style={{ fontSize: '0.8rem' }}>
+                        {currency}
+                        {product.price}
+                      </p>
                     </div>
                   </div>
+                  </Link>
                 </div>
               ))
             ) : (
-              <p>No products found matching the selected filters.</p>
+              <div className="col-12 text-center">
+                 <div className="alert alert-warning" role="alert"> No products found matching the selected filters.</div>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Shimmer CSS */}
-      <style jsx>{`
+      {/* Styles */}
+      <style>{`
         .shimmer {
           position: relative;
           overflow: hidden;
@@ -205,6 +231,27 @@ const Collection = () => {
           100% {
             left: 100%;
           }
+        }
+        .product-card {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          cursor: pointer;
+        }
+        .product-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        .product-img-wrapper {
+          
+          overflow: hidden;
+        }
+        .product-img {
+          width: 100%;
+          
+          object-fit: cover;
+          transition: transform 0.4s ease-in-out;
+        }
+        .product-img-wrapper:hover .product-img {
+          transform: scale(1.08);
         }
       `}</style>
     </div>

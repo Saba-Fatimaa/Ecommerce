@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import "bootstrap-icons/font/bootstrap-icons.css";
 import Home from "./pages/Home";
 import Collection from "./pages/Collection";
 import About from "./pages/About";
@@ -24,7 +24,7 @@ function App() {
         <Route path="/collection" element={<Collection />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/product" element={<Product />} />
+        <Route path="/product/:productId" element={<Product />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/place-order" element={<PlaceOrder />} />
