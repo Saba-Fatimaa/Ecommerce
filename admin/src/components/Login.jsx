@@ -1,74 +1,55 @@
 import React, { useState } from "react";
 import axios from "axios";
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
+import { useNavigate, useLocation } from "react-router-dom";
 
-const Login = () => {
+const Login = ({ setToken }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const onSubmitHandler = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await axios.post(backendUrl + '/api/user/admin', {
+      const response = await axios.post(backendUrl + '/api/admin/login', {
         email,
         password,
       });
-      console.log(response.data);
+
+      if (response.data.token) {
+        const { token, admin } = response.data;
+      
+        setToken(token);
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(admin));
+      
+        const from = location.state?.from?.pathname || "/list";
+        navigate(from, { replace: true });
+      } else {
+        alert("Login failed: " + response.data.message);
+      }
+      
     } catch (error) {
-      console.error("Login error:", error.response?.data || error.message);
+      alert("Login error: " + (error.response?.data?.message || error.message));
     }
   };
-  
 
   return (
-    <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
-      <div
-        className="bg-white shadow p-5 rounded"
-        style={{ width: "100%", maxWidth: "400px" }}
-      >
-        <h2 className="mb-4 text-center">Admin Panel</h2>
-
-        <form onSubmit={onSubmitHandler}>
-          {/* Email Field */}
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="form-control"
-              placeholder="Enter email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-          </div>
-
-          {/* Password Field */}
-          <div className="mb-4">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="form-control"
-              placeholder="Enter password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-          </div>
-
-          {/* Login Button */}
-          <div className="d-grid">
-            <button type="submit" className="btn btn-dark">
-              Login
-            </button>
-          </div>
-        </form>
-      </div>
+    <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+      <form onSubmit={handleLogin} className="p-4 border rounded bg-white shadow" style={{ width: "300px" }}>
+        <h4 className="mb-3 text-center">Login</h4>
+        <div className="mb-3">
+          <label className="form-label">Email</label>
+          <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Password</label>
+          <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <button type="submit" className="btn btn-primary w-100">Login</button>
+      </form>
     </div>
   );
 };

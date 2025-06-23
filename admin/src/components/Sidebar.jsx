@@ -5,19 +5,24 @@ import { assets } from "../assets/admin_assets/assets";
 const Sidebar = () => {
   return (
     <div
-      className="bg-white shadow vh-100 border-end position-fixed"
-      style={{ width: "220px" }}
+      className="bg-white shadow border-end position-fixed"
+      style={{
+        width: "220px",
+        height: "calc(100vh - 56px)",
+        top: "65px",
+        left: 0,
+        zIndex: 1020
+      }}
     >
       <div
-        className="d-flex flex-column gap-3 pt-4 px-3"
+        className="d-flex flex-column gap-3 pt-4 px-3 mt-2"
         style={{ fontSize: "15px" }}
       >
-        {/* Add Items */}
         <NavLink
           to="/add"
           className={({ isActive }) =>
-            `text-decoration-none nav-link text-dark ${isActive
-              ? "bg-light border-start border-3 border-primary"
+            `text-decoration-none nav-link sidebar-link text-dark ${isActive
+              ? "active-link"
               : ""}`}
         >
           <div className="d-flex align-items-center gap-3 px-3 py-2 rounded">
@@ -30,12 +35,11 @@ const Sidebar = () => {
           </div>
         </NavLink>
 
-        {/* List Items */}
         <NavLink
           to="/list-items"
           className={({ isActive }) =>
-            `text-decoration-none nav-link text-dark ${isActive
-              ? "bg-light border-start border-3 border-primary"
+            `text-decoration-none nav-link sidebar-link text-dark ${isActive
+              ? "active-link"
               : ""}`}
         >
           <div className="d-flex align-items-center gap-3 px-3 py-2 rounded">
@@ -48,12 +52,11 @@ const Sidebar = () => {
           </div>
         </NavLink>
 
-        {/* Orders */}
         <NavLink
           to="/orders"
           className={({ isActive }) =>
-            `text-decoration-none nav-link text-dark ${isActive
-              ? "bg-light border-start border-3 border-primary"
+            `text-decoration-none nav-link sidebar-link text-dark ${isActive
+              ? "active-link"
               : ""}`}
         >
           <div className="d-flex align-items-center gap-3 px-3 py-2 rounded">

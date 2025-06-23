@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 // Static folder to serve images
 app.use("/uploads", express.static("uploads"));
 
-app.use("/api/user", adminRoutes);
+app.use("/api/admin", adminRoutes);
 // API Endpoints
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);

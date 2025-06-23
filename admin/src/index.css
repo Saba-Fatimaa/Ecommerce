@@ -22,3 +22,22 @@ label.upload-box:hover {
   border-color: #c586a5;
   background-color: #ffebf5;
 }
+.main-content {
+  margin-top: 56px; /* navbar height */
+  margin-left: 220px; /* sidebar width */
+  padding: 20px;
+}
+/* Sidebar Link Base Style */
+.sidebar-link:hover .rounded {
+  background-color: #e46da8; /* Bootstrap light */
+}
+
+/* Active NavLink Styling */
+.active-link .rounded {
+  background-color: #e9ecef; /* slightly darker than light */
+  border-left: 2px solid #d3428b; /* Bootstrap primary */
+  font-weight: 500;
+}
+.sidebar-link .rounded {
+  transition: background-color 0.3s, border-left 0.3s;
+}
