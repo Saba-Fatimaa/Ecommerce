@@ -1,9 +1,7 @@
-import React, { useContext, useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { ShopContext } from '../context/ShopContext';
-import { get } from '../utils/api.js'; // API helper function
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-
+const BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || "http://localhost:4000";
 const Title = ({ text1, text2 }) => (
   <h2 className="mb-0">
     <span>{text1} </span>
@@ -22,70 +20,100 @@ const ShimmerCard = () => (
 );
 
 const Collection = () => {
-  const { currency, search, showSearch } = useContext(ShopContext);
   const [products, setProducts] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currency] = useState("Rs. ");
+  const [search, setSearch] = useState(""); 
   const [showFilter, setShowFilter] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [sortOrder, setSortOrder] = useState('relevant');
 
+  // Fetch products on mount
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await get('api/product/list');
-        setProducts(response.products || []);
-      } catch (err) {
-        console.error('Failed to fetch products', err);
-        setProducts([]);
+        const res = await axios.get("http://localhost:4000/api/product/list");
+        if (res.data.success) {
+          setProducts(res.data.products);
+        }
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
-  const toggleFilter = () => setShowFilter(prev => !prev);
+  const toggleFilter = () => setShowFilter((prev) => !prev);
 
   const handleCategoryChange = (e) => {
     const { value, checked } = e.target;
-    setSelectedCategories(prev => checked ? [...prev, value] : prev.filter(cat => cat !== value));
+    setSelectedCategories((prev) =>
+      checked ? [...prev, value] : prev.filter((cat) => cat !== value)
+    );
   };
 
   const handleTypeChange = (e) => {
     const { value, checked } = e.target;
-    setSelectedTypes(prev => checked ? [...prev, value] : prev.filter(type => type !== value));
+    setSelectedTypes((prev) =>
+      checked ? [...prev, value] : prev.filter((type) => type !== value)
+    );
   };
 
-  const handleSortChange = (e) => setSortOrder(e.target.value);
+  const handleSortChange = (e) => {
+    setSortOrder(e.target.value);
+  };
+
+  const allCategories = useMemo(() => {
+    if (!products) return [];
+    const set = new Set(products.map((p) => p.category).filter(Boolean));
+    return Array.from(set).sort();
+  }, [products]);
+
+  const allTypes = useMemo(() => {
+    if (!products) return [];
+    const set = new Set(products.map((p) => p.subCategory).filter(Boolean));
+    return Array.from(set).sort();
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
 
-    let result = [...products];
+    let result = products;
 
-    if (showSearch && search?.trim()) {
-      const lowerSearch = search.toLowerCase();
-      result = result.filter(product => product.name?.toLowerCase().includes(lowerSearch));
+    if (search.trim()) {
+      const lower = search.toLowerCase();
+      result = result.filter((p) => p.name?.toLowerCase().includes(lower));
     }
 
-    result = result.filter(product => {
-      const matchCategory = selectedCategories.length === 0 || selectedCategories.includes(product.category);
-      const matchType = selectedTypes.length === 0 || selectedTypes.includes(product.subCategory);
+    result = result.filter((p) => {
+      const matchCategory =
+        selectedCategories.length === 0 || selectedCategories.includes(p.category);
+      const matchType =
+        selectedTypes.length === 0 || selectedTypes.includes(p.subCategory);
       return matchCategory && matchType;
     });
 
-    result.sort((a, b) => {
+    result = result.sort((a, b) => {
       if (sortOrder === 'low-high') return (a.price || 0) - (b.price || 0);
       if (sortOrder === 'high-low') return (b.price || 0) - (a.price || 0);
       return 0;
     });
 
     return result;
-  }, [products, selectedCategories, selectedTypes, sortOrder, search, showSearch]);
+  }, [products, selectedCategories, selectedTypes, sortOrder, search]);
 
   return (
     <div className="container pt-4 border-top">
       <div className="row">
+        {/* Filter Sidebar */}
         <div className="col-sm-3 mb-4">
-          <button className="btn btn-outline-secondary w-100 mb-3" onClick={toggleFilter}>
+          <button
+            className="btn btn-outline-secondary w-100 mb-3"
+            onClick={toggleFilter}
+          >
             {showFilter ? 'Hide Filters' : 'Show Filters'}
           </button>
 
@@ -93,32 +121,38 @@ const Collection = () => {
             <>
               <fieldset className="card mb-3">
                 <legend className="card-body card-title mb-3 h6">Categories</legend>
-                {['Men', 'Women', 'Kids'].map(cat => (
+                {allCategories.map((cat) => (
                   <div className="form-check ms-3" key={cat}>
                     <input
                       type="checkbox"
+                      id={`cat-${cat}`}
                       className="form-check-input"
                       value={cat}
                       onChange={handleCategoryChange}
                       checked={selectedCategories.includes(cat)}
                     />
-                    <label className="form-check-label">{cat}</label>
+                    <label htmlFor={`cat-${cat}`} className="form-check-label">
+                      {cat}
+                    </label>
                   </div>
                 ))}
               </fieldset>
 
               <fieldset className="card mb-3">
                 <legend className="card-body card-title mb-3 h6">Type</legend>
-                {['Topwear', 'Bottomwear', 'Winterwear'].map(type => (
+                {allTypes.map((type) => (
                   <div className="form-check ms-3" key={type}>
                     <input
                       type="checkbox"
+                      id={`type-${type}`}
                       className="form-check-input"
                       value={type}
                       onChange={handleTypeChange}
                       checked={selectedTypes.includes(type)}
                     />
-                    <label className="form-check-label">{type}</label>
+                    <label htmlFor={`type-${type}`} className="form-check-label">
+                      {type}
+                    </label>
                   </div>
                 ))}
               </fieldset>
@@ -126,10 +160,16 @@ const Collection = () => {
           )}
         </div>
 
-        <div className="col-sm-9">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+        {/* Products Grid */}
+        <div className="col-sm-9 flex-grow-1">
+          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <Title text1="ALL" text2="COLLECTIONS" />
-            <select className="form-select w-auto" value={sortOrder} onChange={handleSortChange}>
+            <select
+              className="form-select w-auto"
+              value={sortOrder}
+              onChange={handleSortChange}
+              aria-label="Sort products"
+            >
               <option value="relevant">Sort by: Relevant</option>
               <option value="low-high">Sort by: Low to High</option>
               <option value="high-low">Sort by: High to Low</option>
@@ -137,24 +177,33 @@ const Collection = () => {
           </div>
 
           <div className="row g-4">
-            {products === null ? (
-              Array.from({ length: 6 }).map((_, idx) => (
-                <div key={idx} className="col-6 col-sm-4 col-md-3">
-                  <ShimmerCard />
-                </div>
-              ))
+            {loading ? (
+              Array(6)
+                .fill(0)
+                .map((_, idx) => (
+                  <div key={idx} className="col-6 col-sm-4 col-md-3">
+                    <ShimmerCard />
+                  </div>
+                ))
             ) : filteredProducts.length > 0 ? (
-              filteredProducts.map(product => (
+              filteredProducts.map((product) => (
                 <div key={product._id} className="col-6 col-sm-4 col-md-3">
                   <Link to={`/product/${product._id}`} className="text-decoration-none text-dark">
-                    <div className="card h-200 border-0 shadow-sm product-card text-center">
+                    <div className="card h-200 border-0 shadow-sm product-card text-center transition">
                       <div className="overflow-hidden rounded-2 product-img-wrapper">
-                        {/* <img src={product.image[0]} alt={product.name} className="img-fluid product-img" /> */}
-                        <img src={`${BASE_URL}/uploads/${product.image[0]}`}alt={product.name}className="img-fluid product-img"/>
+                      <img
+  src={`${BASE_URL}/uploads/${product.image[0]}`}
+  alt={product.name}
+/>
                       </div>
                       <div className="card-body px-2 py-3">
-                        <p className="card-title mb-1 text-truncate" style={{ fontSize: '0.85rem' }}>{product.name}</p>
-                        <p className="card-text text-muted mb-0" style={{ fontSize: '0.8rem' }}>{currency}{product.price}</p>
+                        <p className="card-title mb-1 text-truncate" style={{ fontSize: '0.85rem' }}>
+                          {product.name}
+                        </p>
+                        <p className="card-text text-muted mb-0" style={{ fontSize: '0.8rem' }}>
+                          {currency}
+                          {product.price}
+                        </p>
                       </div>
                     </div>
                   </Link>
@@ -182,7 +231,7 @@ const Collection = () => {
           left: -150px;
           height: 100%;
           width: 150px;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
           animation: shimmer 1.5s infinite;
         }
         @keyframes shimmer {
@@ -195,7 +244,7 @@ const Collection = () => {
         }
         .product-card:hover {
           transform: translateY(-5px);
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
         .product-img-wrapper {
           overflow: hidden;

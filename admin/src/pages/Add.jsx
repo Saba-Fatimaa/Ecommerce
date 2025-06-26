@@ -40,9 +40,9 @@ const Add = () => {
       formData.append("bestseller", bestseller);
       formData.append("sizes", JSON.stringify(sizes));
 
-      images.forEach((img, index) => {
+      images.forEach(img => {
         if (img) {
-          formData.append(`image${index + 1}`, img);
+          formData.append("images", img);
         }
       });
 
@@ -93,6 +93,7 @@ const Add = () => {
                 />
                 <input
                   type="file"
+                  name="images"
                   id={`image${index}`}
                   hidden
                   onChange={e => handleImageChange(e, index)}

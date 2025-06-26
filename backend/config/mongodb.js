@@ -1,17 +1,14 @@
 import mongoose from "mongoose";
 
 const connectDB = async () => {
-  mongoose.connection.on("connected", () => {
-    console.log("DB Connected");
-  });
-
   try {
-    await mongoose.connect(`${process.env.MONGODB_URI}/e-commerce`, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
+    await mongoose.connect(process.env.MONGODB_URI, {
+      dbName: "e-commerce" // 👈 this sets the DB explicitly
     });
+
+    console.log("✅ DB Connected:", mongoose.connection.name);
   } catch (error) {
-    console.error("DB Connection Error:", error.message);
+    console.error("❌ DB Connection Error:", error.message);
     process.exit(1);
   }
 };

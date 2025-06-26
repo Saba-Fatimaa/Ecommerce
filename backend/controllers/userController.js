@@ -39,8 +39,8 @@ const loginUser = async (req, res) => {
 
     // Generate JWT token (optional)
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || "your_jwt_secret", // use env variable in production
+      { id: user._id, email: user.email }, // ✅ 'id', not 'userId'
+      process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
@@ -100,7 +100,7 @@ const registerUser = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: newUser._id, email: newUser.email },
+      { id: newUser._id, email: newUser.email },
       process.env.JWT_SECRET || "your_jwt_secret",
       { expiresIn: "1d" }
     );
