@@ -1,49 +1,132 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ Step 1
 
 const Login = () => {
-  const [currentState, setCurrentState] = useState("Sign Up");
+  const navigate = useNavigate(); // ✅ Step 2
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    password: ""
+  });
+  const [message, setMessage] = useState({ type: "", text: "" });
+
+  const handleChange = e => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setMessage({ type: "", text: "" });
+
+    const endpoint = isLogin ? "/api/user/login" : "/api/user/register";
+    const payload = { ...formData };
+    if (isLogin) delete payload.fullName;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Something went wrong");
+
+      setMessage({ type: "success", text: data.message || "Success!" });
+
+      if (!isLogin) {
+        setIsLogin(true);
+        setFormData({ fullName: "", email: "", password: "" });
+      }
+
+      if (isLogin && data.token) {
+        localStorage.setItem("token", data.token);
+        navigate("/"); // ✅ Step 3: Redirect to home
+      }
+    } catch (err) {
+      setMessage({ type: "error", text: err.message });
+    }
+  };
 
   return (
-    <form className="container mt-5 p-4 " style={{ maxWidth: "400px" }}>
-      <div className="d-flex align-items-center gap-2 justify-content-center mb-4">
-        <h3 className="m-0 px-2">
-          {currentState}{" "}
+    <form
+      className="container mt-5 p-4 border rounded shadow-sm"
+      style={{ maxWidth: "400px" }}
+      onSubmit={handleSubmit}
+    >
+      <div className="text-center mb-4">
+        <h3>
+          {isLogin ? "Login" : "Sign Up"}
         </h3>
-        <hr className="border-2 border-dark m-0" style={{ width: "60px" }} />
       </div>
 
-      {currentState === "Sign Up" &&
+      {!isLogin &&
         <div className="mb-3">
-          <input type="text" className="form-control" placeholder="Full Name" />
+          <input
+            type="text"
+            name="fullName"
+            className="form-control"
+            placeholder="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+          />
         </div>}
 
       <div className="mb-3">
-        <input type="email" className="form-control" placeholder="Email" />
+        <input
+          type="email"
+          name="email"
+          className="form-control"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
       </div>
 
       <div className="mb-3">
         <input
           type="password"
+          name="password"
           className="form-control"
           placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
         />
       </div>
 
       <div className="d-flex justify-content-between mb-3">
-        <small className="text-primary cursor-pointer">
-          Forgot your password?
-        </small>
+        {isLogin &&
+          <small className="text-primary">Forgot your password?</small>}
         <small
           className="text-primary cursor-pointer"
-          onClick={() =>
-            setCurrentState(currentState === "Login" ? "Sign Up" : "Login")}
+          style={{ cursor: "pointer" }}
+          onClick={() => {
+            setIsLogin(!isLogin);
+            setMessage({ type: "", text: "" });
+          }}
         >
-          {currentState === "Login" ? "Create an account" : "Login"}
+          {isLogin ? "Create an account" : "Already have an account?"}
         </small>
       </div>
 
+      {message.text &&
+        <div
+          className={`alert alert-${message.type === "error"
+            ? "danger"
+            : "success"} py-2`}
+        >
+          {message.text}
+        </div>}
+
       <button type="submit" className="btn btn-dark w-100">
-        {currentState}
+        {isLogin ? "Login" : "Sign Up"}
       </button>
     </form>
   );

@@ -1,10 +1,14 @@
-import React, { useState } from "react";
-import { NavLink, Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import { assets } from "../assets/frontend_assets/assets";
 
 const Navbar = () => {
   const [visible, setVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { to: "/", label: "Home" },
@@ -13,23 +17,37 @@ const Navbar = () => {
     { to: "/contact", label: "Contact Us" }
   ];
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+
+    const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+    setCartCount(cartItems.length);
+  }, [location]); // Update on route change
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    navigate("/login");
+  };
+
   return (
     <nav className="navbar navbar-expand-sm navbar-light bg-light px-3 py-2">
-      {/* Logo always visible */}
-      <Link className="navbar-brand" to="/login">
+      {/* Logo */}
+      <Link className="navbar-brand" to="/">
         <img src={assets.logo} alt="Logo" width="80" />
       </Link>
 
-      {/* On small screens: icons + hamburger grouped */}
+      {/* Mobile Right Icons */}
       <div className="d-flex align-items-center ms-auto d-sm-none gap-3">
-        {/* Search icon */}
         <img
           src={assets.search_icon}
           alt="Search"
           width="20"
           className="cursor-pointer"
         />
-        {/* Profile dropdown */}
+
+        {/* Mobile Profile Dropdown */}
         <div className="dropdown">
           <img
             src={assets.profile_icon}
@@ -45,27 +63,32 @@ const Navbar = () => {
             className="dropdown-menu dropdown-menu-end"
             aria-labelledby="profileDropdown"
           >
-            <li>
-              <p className="dropdown-item">My Profile</p>
-            </li>
-            <li>
-              <p className="dropdown-item">Orders</p>
-            </li>
-            <li>
-              <p className="dropdown-item">Logout</p>
-            </li>
+            {isLoggedIn ? (
+              <>
+                <li>
+                  <Link to="/orders" className="dropdown-item">Orders</Link>
+                </li>
+                <li>
+                  <button className="dropdown-item" onClick={handleLogout}>Logout</button>
+                </li>
+              </>
+            ) : (
+              <li>
+                <Link to="/login" className="dropdown-item">Login</Link>
+              </li>
+            )}
           </ul>
         </div>
 
-        {/* Cart icon */}
+        {/* Cart Icon */}
         <Link to="/cart" className="position-relative">
           <img src={assets.cart_icon} alt="Cart" width="20" />
           <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
-            {/* cart count here */}
+            {cartCount}
           </span>
         </Link>
 
-        {/* Hamburger button */}
+        {/* Hamburger Toggle */}
         <button
           className="navbar-toggler"
           type="button"
@@ -78,11 +101,9 @@ const Navbar = () => {
         </button>
       </div>
 
-      {/* On sm+ screens: full menu + icons */}
+      {/* Main Navigation */}
       <div
-        className={`collapse navbar-collapse ${visible
-          ? "show"
-          : ""} d-sm-flex justify-content-center align-items-center`}
+        className={`collapse navbar-collapse ${visible ? "show" : ""} d-sm-flex justify-content-center align-items-center`}
         id="navbarNav"
       >
         <ul className="navbar-nav mx-auto mb-2 mb-sm-0 d-flex flex-column flex-sm-row gap-3">
@@ -96,22 +117,23 @@ const Navbar = () => {
               >
                 <NavLink
                   to={to}
-                  className={({ isActive }) =>
-                    "nav-link px-0" + (isActive ? " active" : "")}
+                  className={({ isActive }) => "nav-link px-0" + (isActive ? " active" : "")}
                   onClick={() => setVisible(false)}
                 >
-                  {" "}{label}
+                  {label}
                 </NavLink>
-                {isActive &&
+                {isActive && (
                   <hr
                     className="ms-auto mt-1"
                     style={{ width: "50%", borderTop: "2px solid black" }}
-                  />}
+                  />
+                )}
               </li>
             );
           })}
         </ul>
 
+        {/* Desktop Icons */}
         <div className="d-none d-sm-flex align-items-center gap-3 ms-3">
           <img
             src={assets.search_icon}
@@ -135,26 +157,27 @@ const Navbar = () => {
               className="dropdown-menu dropdown-menu-end"
               aria-labelledby="profileDropdownLarge"
             >
-              <li>
-                <Link to="/login" className="dropdown-item">
-                  My Profile
-                </Link>
-              </li>
-              <li>
-                <Link to="/orders" className="dropdown-item">
-                  Orders
-                </Link>
-              </li>
-              <li>
-                <button className="dropdown-item">Logout</button>
-              </li>
+              {isLoggedIn ? (
+                <>
+                  <li>
+                    <Link to="/orders" className="dropdown-item">Orders</Link>
+                  </li>
+                  <li>
+                    <button className="dropdown-item" onClick={handleLogout}>Logout</button>
+                  </li>
+                </>
+              ) : (
+                <li>
+                  <Link to="/login" className="dropdown-item">Login</Link>
+                </li>
+              )}
             </ul>
           </div>
 
           <Link to="/cart" className="position-relative">
             <img src={assets.cart_icon} alt="Cart" width="20" />
             <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
-              {/* cart count here */}
+              {cartCount}
             </span>
           </Link>
         </div>

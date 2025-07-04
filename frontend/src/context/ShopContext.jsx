@@ -1,71 +1,77 @@
-import { createContext, useState } from "react";
-import { products } from "../assets/frontend_assets/assets";
-
+import { createContext, useEffect, useState } from "react";
+import { post, get, del } from "../utils/api"; // Ensure these helpers support headers
 export const ShopContext = createContext();
 
-const ShopContextProvider = (props) => {
+const ShopContextProvider = ({ children }) => {
   const currency = "PKR";
   const delivery_fee = 150;
 
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(true);
+  const [cartItems, setCartItems] = useState([]); // now an array of { productId, size, quantity, product }
 
-  // 🛒 Cart State: { productId: { size: quantity } }
-  const [cartItems, setCartItems] = useState({});
+  // 🔃 Fetch Cart on Load
+  const fetchCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  // ➕ Add to Cart
-  const addToCart = (productId, size, quantity = 1) => {
-    setCartItems(prev => {
-      const newCart = { ...prev };
-      if (!newCart[productId]) {
-        newCart[productId] = {};
-      }
-      if (!newCart[productId][size]) {
-        newCart[productId][size] = 0;
-      }
-      newCart[productId][size] += quantity;
-      return newCart;
-    });
+    try {
+      const res = await get("/api/cart", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.items) setCartItems(res.items); // array of { productId, size, quantity, product }
+    } catch (err) {
+      console.error("Failed to fetch cart", err);
+    }
   };
 
-  // ➖ Remove from Cart
-  const removeFromCart = (productId, size) => {
-    setCartItems(prev => {
-      const newCart = { ...prev };
-      if (newCart[productId]?.[size]) {
-        delete newCart[productId][size];
-        if (Object.keys(newCart[productId]).length === 0) {
-          delete newCart[productId];
-        }
-      }
-      return newCart;
-    });
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // ➕ Add or Update Cart
+  const addToCart = async (productId, size, quantity = 1) => {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("Please login");
+
+    try {
+      await post("/api/cart/add", { productId, size, quantity }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchCart();
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      alert("Error adding to cart");
+    }
   };
 
   // 🔁 Update Quantity
-  const updateQuantity = (productId, size, quantity) => {
-    setCartItems(prev => {
-      const newCart = { ...prev };
-      if (!newCart[productId]) newCart[productId] = {};
-      newCart[productId][size] = quantity;
-      return newCart;
-    });
+  const updateQuantity = async (productId, size, quantity) => {
+    await addToCart(productId, size, quantity); // same API
   };
 
-  // 🧾 Calculate total items & amount
+  // ❌ Remove Item
+  const removeFromCart = async (productId, size) => {
+    const token = localStorage.getItem("token");
+    try {
+      await del("/api/cart/remove", {
+        data: { productId, size },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchCart();
+    } catch (err) {
+      console.error("Remove from cart failed", err);
+    }
+  };
+
+  // 🧾 Totals
   const getCartTotal = () => {
     let totalItems = 0;
     let totalAmount = 0;
 
-    for (const productId in cartItems) {
-      const product = products.find(p => p._id === productId);
-      if (!product) continue;
-
-      for (const size in cartItems[productId]) {
-        const qty = cartItems[productId][size];
-        totalItems += qty;
-        totalAmount += product.price * qty;
-      }
+    for (const item of cartItems) {
+      totalItems += item.quantity;
+      totalAmount += (item.productId?.price || item.product?.price || 0) * item.quantity;
     }
 
     return {
@@ -76,45 +82,32 @@ const ShopContextProvider = (props) => {
   };
 
   const getCartItems = () => {
-    const items = [];
-  
-    for (const productId in cartItems) {
-      const product = products.find(p => p._id === productId);
-      if (!product) continue;
-  
-      for (const size in cartItems[productId]) {
-        items.push({
-          ...product,
-          size,
-          quantity: cartItems[productId][size],
-        });
-      }
-    }
-  
-    return items;
-  };
-  
-  const value = {
-    products,
-    currency,
-    delivery_fee,
-    search,
-    setSearch,
-    showSearch,
-    setShowSearch,
-
-    // Cart
-    cartItems,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    getCartTotal,
-    getCartItems,
+    return cartItems.map(item => ({
+      ...item.productId, // populated product
+      size: item.size,
+      quantity: item.quantity
+    }));
   };
 
   return (
-    <ShopContext.Provider value={value}>
-      {props.children}
+    <ShopContext.Provider
+      value={{
+        currency,
+        delivery_fee,
+        search,
+        setSearch,
+        showSearch,
+        setShowSearch,
+        cartItems,
+        fetchCart,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        getCartTotal,
+        getCartItems,
+      }}
+    >
+      {children}
     </ShopContext.Provider>
   );
 };

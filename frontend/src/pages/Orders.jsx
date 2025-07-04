@@ -4,7 +4,7 @@ import Title from '../components/Title';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
-  const currency = "PKR"; // Optional: Or get from context if needed
+  const currency = "PKR"; 
 
   useEffect(() => {
     const stored = localStorage.getItem("orders");
@@ -40,14 +40,7 @@ const Orders = () => {
                         <p className="fw-bold text-dark mb-0">Qty: {item.quantity}</p>
                         <p className="fw-bold text-dark mb-0">Size: {item.size}</p>
                       </div>
-                      <p className=" fw-bold text-dark">
-                Date:{" "}
-                {new Date(order.date).toLocaleDateString("en-US", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
+                      <p className=" fw-bold text-dark">Date:{" "}{new Date(order.date).toLocaleDateString("en-US", {day: "2-digit", month: "long", year: "numeric",})} </p>
                     </div>
                     
                   </div>
@@ -58,8 +51,6 @@ const Orders = () => {
                   <button className="border px-4 py-0 text-sm font-medium rounded-sm hover:bg-gray-100 transition">Track Order</button>
                 </div>
               ))}
-  
-              
             </div>
           ))
         )}
